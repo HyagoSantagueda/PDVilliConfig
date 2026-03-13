@@ -16,17 +16,27 @@ echo ""
 echo "Digite o número do PDV (1 a 53) ou 'n' para sair:"
 read -p "Número: " PDV
 
+# Opção de saída
 if [[ "$PDV" =~ ^([nN])$ ]]; then
     echo "Saindo da configuração de IP..."
     exit 0
 fi
 
-# Validação do intervalo
-if ! [[ "$PDV" =~ ^[0-9]+$ ]] || [ "$PDV" -lt 1 ] || [ "$PDV" -gt 53 ]; then
-    echo -e "${VERMELHO}Erro: O número do PDV deve ser entre 1 e 53.${NC}"
-    echo "Pressione qualquer tecla para sair..."
-    read -n 1 -s
-    exit 1
+# --- Lógica de IP (PDV vs SYNC) ---
+if [[ "$PDV" == "sync" ]]; then
+    # Opção oculta para Servidor Sync
+    IP_FINAL=171
+    TIPO="SERVIDOR SYNC"
+else
+    # Validação do intervalo para PDVs normais
+    if ! [[ "$PDV" =~ ^[0-9]+$ ]] || [ "$PDV" -lt 1 ] || [ "$PDV" -gt 53 ]; then
+        echo -e "${VERMELHO}Erro: O número do PDV deve ser entre 1 e 53.${NC}"
+        echo "Pressione qualquer tecla para sair..."
+        read -n 1 -s
+        exit 1
+    fi
+    IP_FINAL=$((200 + PDV))
+    TIPO="PDV $PDV"
 fi
 
 # --- Detecção de Rede ---
@@ -45,9 +55,9 @@ if [ -z "$NETWORK_PREFIX" ]; then
     exit 1
 fi
 
-IP_ALVO="$NETWORK_PREFIX.$((200 + PDV))"
+IP_ALVO="$NETWORK_PREFIX.$IP_FINAL"
 
-echo -e "${AMARELO}Verificando se o IP $IP_ALVO está disponível...${NC}"
+echo -e "${AMARELO}Verificando se o IP $IP_ALVO ($TIPO) está disponível...${NC}"
 IP_ATUAL=$(hostname -I | awk '{print $1}')
 if [ "$IP_ATUAL" != "$IP_ALVO" ]; then
     if ping -c 1 -W 1 "$IP_ALVO" > /dev/null 2>&1; then
@@ -72,10 +82,9 @@ nmcli connection modify "$CON_NAME" \
 nmcli connection up "$CON_NAME" > /dev/null 2>&1
 
 # --- Finalização ---
-echo -e "\n${VERDE}IP FIXADO COM SUCESSO: $IP_ALVO${NC}"
+echo -e "\n${VERDE}IP FIXADO COM SUCESSO: $IP_ALVO ($TIPO)${NC}"
 echo -e "${AMARELO}Pressione qualquer tecla para finalizar...${NC}"
 
-# Aguarda o pressionamento de uma tecla (-n 1 lê um caractere, -s não mostra a tecla no terminal)
 read -n 1 -s
 
 exit 0
