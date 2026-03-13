@@ -107,29 +107,17 @@ sudo apt install net-tools ssh jq -y
 ############################################
 echo -e "\n${AMARELO}>>> Aplicando identidade visual ILLIMITAR...${NC}"
 
-# Garante que a pasta do repositório seja legível pelo sistema de janelas
 chown -R $USER_NAME:$USER_NAME $REPO_PATH
 chmod -R 755 $REPO_PATH
 
 case "$DESKTOP_ENV" in
     *"cinnamon"*)
-        # Aplicação de Wallpaper (Caminho direto do REPO)
         sudo -u $USER_NAME DISPLAY=:0 DBUS_SESSION_BUS_ADDRESS="unix:path=/run/user/$USER_ID/bus" \
         gsettings set org.cinnamon.desktop.background picture-uri "file://$CAPA_PATH"
         
-        # Localiza o JSON do menu
-        MENU_DIR="/home/$USER_NAME/.config/cinnamon/spices/menu@cinnamon.org"
-        MENU_CONF=$(ls $MENU_DIR/*.json 2>/dev/null | head -n 1)
-
-        if [ -f "$MENU_CONF" ]; then
-            sed -i 's|"use-custom-label": { "type": "checkbox", "value": false }|"use-custom-label": { "type": "checkbox", "value": true }|' "$MENU_CONF"
-            sed -i 's|"custom-icon": { "type": "icon-chooser", "value": ".*" }|"custom-icon": { "type": "icon-chooser", "value": "'$LOGO_PATH'" }|' "$MENU_CONF"
-            sed -i 's|"custom-label": { "type": "entry", "value": ".*" }|"custom-label": { "type": "entry", "value": "ILLIMITAR" }|' "$MENU_CONF"
-            chown $USER_NAME:$USER_NAME "$MENU_CONF"
-            
-            # Força o Cinnamon a recarregar o applet para "desbugar" o ícone na hora
-            sudo -u $USER_NAME DISPLAY=:0 DBUS_SESSION_BUS_ADDRESS="unix:path=/run/user/$USER_ID/bus" \
-            busctl --user call org.Cinnamon org.Cinnamon /org/Cinnamon org.Cinnamon Eval s 'Main.appletManager.getAppletsByUuid("menu@cinnamon.org").forEach(i => i.on_settings_changed())' 2>/dev/null
+        MENU_JSON="/home/$USER_NAME/.config/cinnamon/spices/menu@cinnamon.org/0.json"
+        if [ -f "$MENU_JSON" ]; then
+            sudo -u $USER_NAME sed -i 's|"value": "linuxmint-logo-ring-symbolic"|"value": "'$LOGO_PATH'"|' "$MENU_JSON"
         fi
         ;;
     *"mate"*)
@@ -143,23 +131,44 @@ case "$DESKTOP_ENV" in
 esac
 
 ############################################
-# INSTALAÇÃO PDV 
+# INSTALAÇÃO PDV (COM PERGUNTA)
 ############################################
-echo -e "\n${VERDE}>>> Iniciando Instalador PDV ILLIMITAR...${NC}"
-if [ -f "./attPDV.sh" ]; then
-    chmod +x ./attPDV.sh
-    sudo ./attPDV.sh
+echo -e "\n${AMARELO}==========================================${NC}"
+read -p "Deseja iniciar a instalação do Navegador PDV agora? (s/N): " INSTALL_NAV
+
+if [[ "$INSTALL_NAV" =~ ^([sS])$ ]]; then
+    echo -e "\n${VERDE}>>> Iniciando Instalador PDV ILLIMITAR...${NC}"
+    if [ -f "./attPDV.sh" ]; then
+        chmod +x ./attPDV.sh
+        sudo ./attPDV.sh
+    else
+        echo -e "${VERMELHO}Erro: attPDV.sh não encontrado!${NC}"
+    fi
 else
-    echo -e "${VERMELHO}Erro: attPDV.sh não encontrado!${NC}"
+    echo -e "${AMARELO}>>> Instalação do Navegador PDV pulada.${NC}"
+fi
+
+############################################
+# PERGUNTA FINAL: CONFIGURAÇÃO DE IP (PDV)
+############################################
+echo -e "\n${AMARELO}==========================================${NC}"
+read -p "Este terminal é um PDV e precisa de IP fixo? (s/N): " IS_PDV
+
+if [[ "$IS_PDV" =~ ^([sS])$ ]]; then
+    if [ -f "$REPO_PATH/fixarIP.sh" ]; then
+        chmod +x "$REPO_PATH/fixarIP.sh"
+        "$REPO_PATH/fixarIP.sh"
+    else
+        echo -e "${VERMELHO}Erro: Script fixarIP.sh não encontrado em $REPO_PATH!${NC}"
+    fi
 fi
 
 ############################################
 # CRIAR ATALHOS NA ÁREA DE TRABALHO
 ############################################
-echo -e "\n${AMARELO}>>> Criando atalhos...${NC}"
+echo -e "\n${AMARELO}>>> Criando atalhos na Área de Trabalho...${NC}"
 DT_PATH=$(sudo -u $USER_NAME xdg-user-dir DESKTOP)
 
-# Atalho PDV
 cat <<EOF > "$DT_PATH/pdv.desktop"
 [Desktop Entry]
 Version=1.0
@@ -172,7 +181,6 @@ Terminal=false
 Categories=Office;
 EOF
 
-# Atalho AnyDesk
 cat <<EOF > "$DT_PATH/anydesk.desktop"
 [Desktop Entry]
 Version=1.0
@@ -185,7 +193,6 @@ Terminal=false
 Categories=Network;RemoteAccess;
 EOF
 
-# Atalho Calculadora
 cat <<EOF > "$DT_PATH/calculadora.desktop"
 [Desktop Entry]
 Version=1.0
@@ -202,19 +209,6 @@ chmod +x "$DT_PATH"/*.desktop
 if [[ "$DESKTOP_ENV" == *"cinnamon"* ]]; then
     sudo -u $USER_NAME DISPLAY=:0 DBUS_SESSION_BUS_ADDRESS="unix:path=/run/user/$USER_ID/bus" \
     gio set "$DT_PATH"/*.desktop metadata::trusted true 2>/dev/null
-fi
-
-############################################
-# PERGUNTA FINAL: CONFIGURAÇÃO DE IP (PDV)
-############################################
-echo -e "\n${AMARELO}==========================================${NC}"
-read -p "Este terminal é um PDV e precisa de IP fixo? (s/N): " IS_PDV
-
-if [[ "$IS_PDV" =~ ^([sS])$ ]]; then
-    if [ -f "$REPO_PATH/fixarIP.sh" ]; then
-        chmod +x "$REPO_PATH/fixarIP.sh"
-        "$REPO_PATH/fixarIP.sh"
-    fi
 fi
 
 echo -e "\n${VERDE}==========================================${NC}"
