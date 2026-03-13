@@ -119,30 +119,25 @@ echo "Instalação de ferramentas finalizada."
 echo -e "\n${AMARELO}>>> Aplicando identidade visual ILLIMITAR...${NC}"
 mkdir -p /home/$USER_NAME/imagens_sistema
 
-# Copiando ambas as imagens
 cp $REPO_PATH/capa.png /home/$USER_NAME/imagens_sistema/ 2>/dev/null
 cp $REPO_PATH/logo.png /home/$USER_NAME/imagens_sistema/ 2>/dev/null
 chown -R $USER_NAME:$USER_NAME /home/$USER_NAME/imagens_sistema
 
 case "$DESKTOP_ENV" in
     *"cinnamon"*)
-        # Aplica a CAPA como fundo
         sudo -u $USER_NAME DISPLAY=:0 DBUS_SESSION_BUS_ADDRESS="unix:path=/run/user/$USER_ID/bus" \
         gsettings set org.cinnamon.desktop.background picture-uri "file://$CAPA_PATH"
         
-        # Aplica a LOGO no ícone do Menu
         MENU_JSON="/home/$USER_NAME/.config/cinnamon/spices/menu@cinnamon.org/0.json"
         if [ -f "$MENU_JSON" ]; then
             sudo -u $USER_NAME sed -i 's|"value": "linuxmint-logo-ring-symbolic"|"value": "'$LOGO_PATH'"|' "$MENU_JSON"
         fi
         ;;
     *"mate"*)
-        # Aplica a CAPA como fundo
         sudo -u $USER_NAME DISPLAY=:0 DBUS_SESSION_BUS_ADDRESS="unix:path=/run/user/$USER_ID/bus" \
         gsettings set org.mate.background picture-filename "$CAPA_PATH"
         ;;
     *"xfce"*)
-        # Aplica a CAPA como fundo
         sudo -u $USER_NAME DISPLAY=:0 DBUS_SESSION_BUS_ADDRESS="unix:path=/run/user/$USER_ID/bus" \
         bash -c '
             for prop in $(xfconf-query -c xfce4-desktop -p /backdrop -l | grep last-image); do
@@ -162,6 +157,60 @@ if [ -f "./attPDV.sh" ]; then
     sudo ./attPDV.sh
 else
     echo -e "${VERMELHO}Erro: attPDV.sh não encontrado!${NC}"
+fi
+
+############################################
+# CRIAR ATALHOS NA ÁREA DE TRABALHO
+############################################
+echo -e "\n${AMARELO}>>> Criando atalhos na Área de Trabalho...${NC}"
+
+# Detecta o caminho correto da Área de Trabalho do usuário
+DT_PATH=$(sudo -u $USER_NAME xdg-user-dir DESKTOP)
+
+# 1. Atalho para o PDV
+cat <<EOF > "$DT_PATH/pdv.desktop"
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Navegador PDV
+Comment=Sistema PDV ILLIMITAR
+Exec=/opt/pdv/pdv
+Icon=$LOGO_PATH
+Terminal=false
+Categories=Office;
+EOF
+
+# 2. Atalho para o Anydesk
+cat <<EOF > "$DT_PATH/anydesk.desktop"
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=AnyDesk
+Comment=Suporte Remoto ILLIMITAR
+Exec=/usr/bin/anydesk
+Icon=anydesk
+Terminal=false
+Categories=Network;RemoteAccess;
+EOF
+
+# 3. Atalho para a Calculadora
+cat <<EOF > "$DT_PATH/calculadora.desktop"
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Calculadora
+Exec=gnome-calculator
+Icon=accessories-calculator
+Terminal=false
+EOF
+
+# Permissões e Propriedade
+chown $USER_NAME:$USER_NAME "$DT_PATH"/*.desktop
+chmod +x "$DT_PATH"/*.desktop
+
+# Marca como confiável no Cinnamon para carregar os ícones imediatamente
+if [[ "$DESKTOP_ENV" == *"cinnamon"* ]]; then
+    sudo -u $USER_NAME dbus-launch gio set "$DT_PATH"/*.desktop metadata::trusted true 2>/dev/null
 fi
 
 echo -e "\n${VERDE}==========================================${NC}"
