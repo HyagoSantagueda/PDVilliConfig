@@ -104,8 +104,7 @@ sudo apt remove anydesk -y 2>/dev/null
 sudo apt install anydesk -y
 sudo systemctl enable anydesk
 sudo systemctl start anydesk 
-echo "full@time15" | sudo anydesk --set-password
-echo "Anydesk configurado."
+echo "Anydesk instalado e habilitado."
 
 ############################################
 # FERRAMENTAS DE REDE E UTILITÁRIOS
