@@ -57,5 +57,6 @@ AUTORIA E DESENVOLVIMENTO:
 * João Victor Moraes - Desenvolvedor
 
 ILLIMITAR - Soluções Integradas
+
 © 2026 Todos os direitos reservados.
 ============================================================
