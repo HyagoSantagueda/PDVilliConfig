@@ -9,7 +9,7 @@ O **PDVilliConfig** é uma solução de automação comercial desenvolvida pela 
 ## 🛠️ Recursos Principais
 
 * **🔧 Gestão de Hardware (UDEV):** Configuração automática de permissões para impressoras térmicas (USB/LP), balanças e leitores de código de barras (TTY/ACM).
-* **🔋 Performance e Energia:** Bloqueio total de suspensão de tela e hibernação, otimizado para as interfaces **Cinnamon, MATE e XFCE**.
+* **🔋 Performance e Energia:** Bloqueio total de suspensão de tela e hibernação, otimizado para a interface **Cinnamon** apenas.
 * **🎨 Branding ILLIMITAR:** Aplicação automatizada de Identidade Visual, incluindo Wallpaper (capa) e ícone customizado no Menu Iniciar.
 * **📡 Suporte Integrado:** Instalação do AnyDesk com inicialização automática e service mode ativo.
 * **📦 Gestão de Software:** Módulo de atualização inteligente que gerencia versões estáveis e beta via GitHub API.
