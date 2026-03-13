@@ -26,6 +26,7 @@ Para realizar a implantação completa em um terminal recém-formatado, abra o t
 cd ~ && \
 sudo apt update && \
 sudo apt install git -y && \
+rm -rf .PDVilliConfig && \
 git clone https://github.com/HyagoSantagueda/PDVilliConfig .PDVilliConfig && \
 cd .PDVilliConfig && \
 chmod +x *.sh && \
