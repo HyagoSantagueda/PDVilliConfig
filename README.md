@@ -38,7 +38,7 @@ ESTRUTURA DO ECOSSISTEMA:
 
 1. configuracao_inicial.sh: Script Mestre. Coordena o setup visual.
 2. attPDV.sh: Gerenciador de Versões: Instalação Estável (Opção 1), Instalação Beta Oculta (170) e Downgrade para versão Estável Oculto (171). No modo Downgrade, o script realiza o backup do arquivo pdv.ini, remove a versão atual, instala a versão estável e restaura o arquivo de configuração para a pasta de destino.
-3. fixarIP.sh: Módulo de Rede. Configura IP Estático e DNS.
+3. fixarIP.sh: Módulo de Rede: Configura IP Estático e DNS. O script calcula automaticamente o IP final somando 200 + Número do PDV (ex: PDV 10 fixa o IP .210). Possui a opção oculta de digitar sync, que define o IP final fixo como .171 para servidores.
 4. capa.png / logo.png: Ativos visuais de personalização.
 
 ------------------------------------------------------------
