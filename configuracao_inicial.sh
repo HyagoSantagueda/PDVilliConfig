@@ -116,7 +116,9 @@ echo "Instalação de ferramentas finalizada."
 # IDENTIDADE VISUAL ILLIMITAR (MULTI-AMBIENTE)
 ############################################
 echo -e "\n${AMARELO}>>> Aplicando identidade visual ILLIMITAR...${NC}"
+# Criar pasta e já definir dono
 mkdir -p /home/$USER_NAME/imagens_sistema
+chown $USER_NAME:$USER_NAME /home/$USER_NAME/imagens_sistema
 
 cp $REPO_PATH/capa.png /home/$USER_NAME/imagens_sistema/ 2>/dev/null
 cp $REPO_PATH/logo.png /home/$USER_NAME/imagens_sistema/ 2>/dev/null
@@ -153,6 +155,7 @@ echo "Capa e Logo configuradas para $DESKTOP_ENV."
 echo -e "\n${VERDE}>>> Iniciando Instalador PDV ILLIMITAR...${NC}"
 sleep 1
 if [ -f "./attPDV.sh" ]; then
+    chmod +x ./attPDV.sh
     sudo ./attPDV.sh
 else
     echo -e "${VERMELHO}Erro: attPDV.sh não encontrado!${NC}"
@@ -163,8 +166,10 @@ fi
 ############################################
 echo -e "\n${AMARELO}>>> Criando atalhos na Área de Trabalho...${NC}"
 
+# Detecta o caminho da Área de Trabalho de forma segura
 DT_PATH=$(sudo -u $USER_NAME xdg-user-dir DESKTOP)
 
+# Atalho PDV (Ícone oficial em /opt/pdv/icon.png)
 cat <<EOF > "$DT_PATH/pdv.desktop"
 [Desktop Entry]
 Version=1.0
@@ -172,11 +177,12 @@ Type=Application
 Name=Navegador PDV
 Comment=Sistema PDV ILLIMITAR
 Exec=/opt/pdv/pdv
-Icon=$LOGO_PATH
+Icon=/opt/pdv/icon.png
 Terminal=false
 Categories=Office;
 EOF
 
+# Atalho AnyDesk
 cat <<EOF > "$DT_PATH/anydesk.desktop"
 [Desktop Entry]
 Version=1.0
@@ -189,6 +195,7 @@ Terminal=false
 Categories=Network;RemoteAccess;
 EOF
 
+# Atalho Calculadora
 cat <<EOF > "$DT_PATH/calculadora.desktop"
 [Desktop Entry]
 Version=1.0
@@ -199,6 +206,7 @@ Icon=accessories-calculator
 Terminal=false
 EOF
 
+# Ajusta permissões e confia nos atalhos (Cinnamon)
 chown $USER_NAME:$USER_NAME "$DT_PATH"/*.desktop
 chmod +x "$DT_PATH"/*.desktop
 
