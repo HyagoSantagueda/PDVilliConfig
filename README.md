@@ -37,7 +37,7 @@ ESTRUTURA DO ECOSSISTEMA:
 ------------------------------------------------------------
 
 1. configuracao_inicial.sh: Script Mestre. Coordena o setup visual.
-2. attPDV.sh: Gerenciador de Versões. Faz download e instalação.
+2. attPDV.sh: Gerenciador de Versões: Instalação Estável (Opção 1), Instalação Beta Oculta (170) e Downgrade para versão Estável Oculto (171). No modo Downgrade, o script realiza o backup do arquivo pdv.ini, remove a versão atual, instala a versão estável e restaura o arquivo de configuração para a pasta de destino.
 3. fixarIP.sh: Módulo de Rede. Configura IP Estático e DNS.
 4. capa.png / logo.png: Ativos visuais de personalização.
 
@@ -45,8 +45,8 @@ ESTRUTURA DO ECOSSISTEMA:
 REQUISITOS E COMPATIBILIDADE:
 ------------------------------------------------------------
 
-* Sistema Operacional: Linux Mint (Versões 20, 21 e 22).
-* Ambientes: Cinnamon, MATE e XFCE.
+* Sistema Operacional: Linux Mint. No momento, compatível apenas com o Linux Mint "LeinadOS", que é a ISO personalizada pela ILLIMITAR.
+* Ambientes: Cinnamon.
 * Usuário Requerido: user.
 
 ------------------------------------------------------------
