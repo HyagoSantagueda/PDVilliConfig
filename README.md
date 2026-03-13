@@ -23,14 +23,13 @@ O **PDVilliConfig** é uma solução de automação comercial desenvolvida pela 
 Para realizar a implantação completa em um terminal recém-formatado, abra o terminal do Linux Mint e execute o comando abaixo:
 
 ```bash
-cd ~ && \
-sudo apt update && \
-sudo apt install git -y && \
-rm -rf .PDVilliConfig && \
-git clone https://github.com/HyagoSantagueda/PDVilliConfig .PDVilliConfig && \
-cd .PDVilliConfig && \
+REAL_USER="user" && REAL_HOME="/home/$REAL_USER" && \
+sudo apt update && sudo apt install git -y && \
+sudo -u $REAL_USER rm -rf $REAL_HOME/.PDVilliConfig && \
+sudo -u $REAL_USER git clone https://github.com/HyagoSantagueda/PDVilliConfig $REAL_HOME/.PDVilliConfig && \
+cd $REAL_HOME/.PDVilliConfig && \
 chmod +x *.sh && \
-./configuracao_inicial.sh
+sudo ./configuracao_inicial.sh
 ```
 
 ------------------------------------------------------------
