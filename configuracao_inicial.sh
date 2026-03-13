@@ -71,16 +71,12 @@ case "$DESKTOP_ENV" in
             xfconf-query -c xfce4-screensaver -p /saver/enabled -s false
         '
         ;;
-    *)
-        echo -e "${VERMELHO}Ambiente desconhecido. Configurações de energia ignoradas.${NC}"
-        ;;
 esac
-echo "Configuração de energia finalizada."
 
 ############################################
 # GRUPOS E PERMISSÕES USB (UDEV)
 ############################################
-echo -e "\n${AMARELO}>>> Aplicando permissões de usuários e hardware...${NC}"
+echo -e "\n${AMARELO}>>> Aplicando permissões de hardware...${NC}"
 for grupo in lp tty dialout; do
     sudo usermod -aG $grupo $USER_NAME
 done
@@ -90,39 +86,35 @@ echo 'KERNEL=="ttyS*", MODE="0777"' | sudo tee /etc/udev/rules.d/99-serial-s.rul
 echo 'KERNEL=="ttyACM*", MODE="0777"' | sudo tee /etc/udev/rules.d/99-serial-acm.rules > /dev/null
 sudo udevadm control --reload-rules && sudo udevadm trigger
 
-sudo chmod -Rf 777 /dev/usb/lp* 2>/dev/null
-sudo chmod -Rf 777 /dev/ttyS* 2>/dev/null
-sudo chmod -Rf 777 /dev/ttyACM* 2>/dev/null
-echo "Permissões de hardware aplicadas."
-
 ############################################
-# ANYDESK
+# ANYDESK (CORREÇÃO PARA NÃO QUEDAR CONEXÃO)
 ############################################
-echo -e "\n${AMARELO}>>> Configurando Anydesk para suporte remoto...${NC}"
-sudo apt remove anydesk -y 2>/dev/null
-sudo apt install anydesk -y
+echo -e "\n${AMARELO}>>> Verificando AnyDesk...${NC}"
+# Apenas instala/atualiza se não estiver presente. Não remove para não derrubar o suporte.
+sudo apt install anydesk -y 
 sudo systemctl enable anydesk
-sudo systemctl start anydesk 
-echo "Anydesk instalado e habilitado."
+# Não reiniciamos o serviço via systemctl se ele já estiver rodando para não cair a conexão
+if ! systemctl is-active --quiet anydesk; then
+    sudo systemctl start anydesk
+fi
 
 ############################################
 # FERRAMENTAS DE REDE E UTILITÁRIOS
 ############################################
-echo -e "\n${AMARELO}>>> Instalando ferramentas de suporte (Net-tools, SSH, JQ)...${NC}"
+echo -e "\n${AMARELO}>>> Instalando ferramentas de suporte...${NC}"
 sudo apt install net-tools ssh jq -y
-echo "Instalação de ferramentas finalizada."
 
 ############################################
-# IDENTIDADE VISUAL ILLIMITAR (MULTI-AMBIENTE)
+# IDENTIDADE VISUAL ILLIMITAR (CORRIGIDO)
 ############################################
 echo -e "\n${AMARELO}>>> Aplicando identidade visual ILLIMITAR...${NC}"
-# Criar pasta e já definir dono
 mkdir -p /home/$USER_NAME/imagens_sistema
 chown $USER_NAME:$USER_NAME /home/$USER_NAME/imagens_sistema
 
-cp $REPO_PATH/capa.png /home/$USER_NAME/imagens_sistema/ 2>/dev/null
-cp $REPO_PATH/logo.png /home/$USER_NAME/imagens_sistema/ 2>/dev/null
+cp $REPO_PATH/capa.png $CAPA_PATH 2>/dev/null
+cp $REPO_PATH/logo.png $LOGO_PATH 2>/dev/null
 chown -R $USER_NAME:$USER_NAME /home/$USER_NAME/imagens_sistema
+chmod 644 $CAPA_PATH $LOGO_PATH
 
 case "$DESKTOP_ENV" in
     *"cinnamon"*)
@@ -131,7 +123,9 @@ case "$DESKTOP_ENV" in
         
         MENU_JSON="/home/$USER_NAME/.config/cinnamon/spices/menu@cinnamon.org/0.json"
         if [ -f "$MENU_JSON" ]; then
-            sudo -u $USER_NAME sed -i 's|"value": "linuxmint-logo-ring-symbolic"|"value": "'$LOGO_PATH'"|' "$MENU_JSON"
+            sed -i 's|"value": ".*symbolic"|"value": "'$LOGO_PATH'"|' "$MENU_JSON"
+            sed -i 's|"value": "linuxmint-logo-ring"|"value": "'$LOGO_PATH'"|' "$MENU_JSON"
+            chown $USER_NAME:$USER_NAME "$MENU_JSON"
         fi
         ;;
     *"mate"*)
@@ -147,13 +141,11 @@ case "$DESKTOP_ENV" in
         '
         ;;
 esac
-echo "Capa e Logo configuradas para $DESKTOP_ENV."
 
 ############################################
 # INSTALAÇÃO PDV 
 ############################################
 echo -e "\n${VERDE}>>> Iniciando Instalador PDV ILLIMITAR...${NC}"
-sleep 1
 if [ -f "./attPDV.sh" ]; then
     chmod +x ./attPDV.sh
     sudo ./attPDV.sh
@@ -164,12 +156,10 @@ fi
 ############################################
 # CRIAR ATALHOS NA ÁREA DE TRABALHO
 ############################################
-echo -e "\n${AMARELO}>>> Criando atalhos na Área de Trabalho...${NC}"
-
-# Detecta o caminho da Área de Trabalho de forma segura
+echo -e "\n${AMARELO}>>> Criando atalhos...${NC}"
 DT_PATH=$(sudo -u $USER_NAME xdg-user-dir DESKTOP)
 
-# Atalho PDV (Ícone oficial em /opt/pdv/icon.png)
+# Atalho PDV
 cat <<EOF > "$DT_PATH/pdv.desktop"
 [Desktop Entry]
 Version=1.0
@@ -206,12 +196,12 @@ Icon=accessories-calculator
 Terminal=false
 EOF
 
-# Ajusta permissões e confia nos atalhos (Cinnamon)
 chown $USER_NAME:$USER_NAME "$DT_PATH"/*.desktop
 chmod +x "$DT_PATH"/*.desktop
 
 if [[ "$DESKTOP_ENV" == *"cinnamon"* ]]; then
-    sudo -u $USER_NAME dbus-launch gio set "$DT_PATH"/*.desktop metadata::trusted true 2>/dev/null
+    sudo -u $USER_NAME DISPLAY=:0 DBUS_SESSION_BUS_ADDRESS="unix:path=/run/user/$USER_ID/bus" \
+    gio set "$DT_PATH"/*.desktop metadata::trusted true 2>/dev/null
 fi
 
 ############################################
@@ -224,8 +214,6 @@ if [[ "$IS_PDV" =~ ^([sS])$ ]]; then
     if [ -f "$REPO_PATH/fixarIP.sh" ]; then
         chmod +x "$REPO_PATH/fixarIP.sh"
         "$REPO_PATH/fixarIP.sh"
-    else
-        echo -e "${VERMELHO}Erro: Script fixarIP.sh não encontrado em $REPO_PATH!${NC}"
     fi
 fi
 
