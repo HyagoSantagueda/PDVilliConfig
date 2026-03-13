@@ -1,9 +1,8 @@
 # 🚀 ILLIMITAR - PDVilliConfig (v1.1)
 
-> **Padronização e Automação para Terminais PDV em Linux Mint.**
+> **Padronização e Automação para Terminais PDV em Linux Mint Cinnamon "LeinadOS"ISO personalizada pela ILLIMITAR.**
 
-O **PDVilliConfig** é uma solução de automação comercial desenvolvida pela **ILLIMITAR Soluções Integradas**. Este projeto foi criado para eliminar erros humanos e reduzir o tempo de implantação de novos terminais PDV, garantindo que cada máquina saia de fábrica com 100% de compatibilidade e performance.
-
+O **PDVilliConfig** é uma solução de automação comercial desenvolvida pela **ILLIMITAR Soluções Integradas**. Este projeto foi criado para eliminar erros humanos e reduzir o tempo de implantação de novos terminais PDV, garantindo que cada máquina seja finalizada, **após a formatação**, com 100% de compatibilidade e performance.
 ---
 
 ## 🛠️ Recursos Principais
@@ -20,7 +19,7 @@ O **PDVilliConfig** é uma solução de automação comercial desenvolvida pela 
 
 ## 🚀 Como Utilizar (Instalação Rápida)
 
-Para realizar a implantação completa em um terminal recém-formatado, abra o terminal do Linux Mint e execute o comando abaixo:
+Para realizar a implantação completa em um terminal recém-formatado com **LeinadOS** (Linux Mint 22.1 Personalizado pela ILLIMITAR), abra o terminal do Linux Mint e execute o comando abaixo:
 
 ```bash
 REAL_USER="user" && REAL_HOME="/home/$REAL_USER" && \
@@ -53,8 +52,7 @@ REQUISITOS E COMPATIBILIDADE:
 AUTORIA E DESENVOLVIMENTO:
 ------------------------------------------------------------
 
-* Hyago Santagueda - Desenvolvedor
-* João Victor Moraes - Desenvolvedor
+* Desenvolvedores: Hyago Santagueda & João Victor Moraes
 
 ILLIMITAR - Soluções Integradas © 2026 
 
