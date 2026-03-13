@@ -14,7 +14,8 @@ USER_NAME="user"
 USER_ID=$(id -u $USER_NAME)
 CAPA_PATH="/home/$USER_NAME/imagens_sistema/capa.png"
 LOGO_PATH="/home/$USER_NAME/imagens_sistema/logo.png"
-REPO_PATH="/home/$USER_NAME/PDVilliConfig"
+# AJUSTADO: Agora aponta para a pasta oculta .PDVilliConfig
+REPO_PATH="/home/$USER_NAME/.PDVilliConfig"
 
 # Cores para feedback
 VERDE='\033[0;32m'
@@ -164,10 +165,8 @@ fi
 ############################################
 echo -e "\n${AMARELO}>>> Criando atalhos na Área de Trabalho...${NC}"
 
-# Detecta o caminho correto da Área de Trabalho do usuário
 DT_PATH=$(sudo -u $USER_NAME xdg-user-dir DESKTOP)
 
-# 1. Atalho para o PDV
 cat <<EOF > "$DT_PATH/pdv.desktop"
 [Desktop Entry]
 Version=1.0
@@ -180,7 +179,6 @@ Terminal=false
 Categories=Office;
 EOF
 
-# 2. Atalho para o Anydesk
 cat <<EOF > "$DT_PATH/anydesk.desktop"
 [Desktop Entry]
 Version=1.0
@@ -193,7 +191,6 @@ Terminal=false
 Categories=Network;RemoteAccess;
 EOF
 
-# 3. Atalho para a Calculadora
 cat <<EOF > "$DT_PATH/calculadora.desktop"
 [Desktop Entry]
 Version=1.0
@@ -204,11 +201,9 @@ Icon=accessories-calculator
 Terminal=false
 EOF
 
-# Permissões e Propriedade
 chown $USER_NAME:$USER_NAME "$DT_PATH"/*.desktop
 chmod +x "$DT_PATH"/*.desktop
 
-# Marca como confiável no Cinnamon para carregar os ícones imediatamente
 if [[ "$DESKTOP_ENV" == *"cinnamon"* ]]; then
     sudo -u $USER_NAME dbus-launch gio set "$DT_PATH"/*.desktop metadata::trusted true 2>/dev/null
 fi

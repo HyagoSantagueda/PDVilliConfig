@@ -10,10 +10,18 @@ O **PDVilliConfig** padroniza a implantação de novos PDVs. Automatiza configur
 No terminal do Linux Mint, execute:
 
 ```bash
-sudo apt update && sudo apt install git -y && rm -rf PDVilliConfig && git clone https://github.com/HyagoSantagueda/PDVilliConfig && cd PDVilliConfig && chmod +x *.sh && ./configuracao_inicial.sh
+cd ~ && \
+sudo apt update && \
+sudo apt install git -y && \
+rm -rf .PDVilliConfig && \
+git clone https://github.com/HyagoSantagueda/PDVilliConfig .PDVilliConfig && \
+cd .PDVilliConfig && \
+chmod +x *.sh && \
+./configuracao_inicial.sh
 ```
 
 ## 👥 Autoria
+* **ILLIMITAR** - *Empresa*
 * **Hyago Santagueda** - *Desenvolvedor*
 * **João Victor Moraes** - *Desenvolvedor*
 
