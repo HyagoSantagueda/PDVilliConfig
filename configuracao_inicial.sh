@@ -14,7 +14,6 @@ USER_NAME="user"
 USER_ID=$(id -u $USER_NAME)
 CAPA_PATH="/home/$USER_NAME/imagens_sistema/capa.png"
 LOGO_PATH="/home/$USER_NAME/imagens_sistema/logo.png"
-# AJUSTADO: Agora aponta para a pasta oculta .PDVilliConfig
 REPO_PATH="/home/$USER_NAME/.PDVilliConfig"
 
 # Cores para feedback
@@ -207,6 +206,21 @@ if [[ "$DESKTOP_ENV" == *"cinnamon"* ]]; then
     sudo -u $USER_NAME dbus-launch gio set "$DT_PATH"/*.desktop metadata::trusted true 2>/dev/null
 fi
 
+############################################
+# PERGUNTA FINAL: CONFIGURAÇÃO DE IP (PDV)
+############################################
+echo -e "\n${AMARELO}==========================================${NC}"
+read -p "Este terminal é um PDV e precisa de IP fixo? (s/N): " IS_PDV
+
+if [[ "$IS_PDV" =~ ^([sS])$ ]]; then
+    if [ -f "$REPO_PATH/fixarIP.sh" ]; then
+        chmod +x "$REPO_PATH/fixarIP.sh"
+        "$REPO_PATH/fixarIP.sh"
+    else
+        echo -e "${VERMELHO}Erro: Script fixarIP.sh não encontrado em $REPO_PATH!${NC}"
+    fi
+fi
+
 echo -e "\n${VERDE}==========================================${NC}"
-echo -e "${VERDE}       CONFIGURAÇÃO ILLIMITAR CONCLUÍDA!  ${NC}"
+echo -e "${VERDE}        CONFIGURAÇÃO ILLIMITAR CONCLUÍDA!  ${NC}"
 echo -e "${VERDE}==========================================${NC}"
