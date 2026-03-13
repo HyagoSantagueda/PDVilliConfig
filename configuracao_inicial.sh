@@ -87,13 +87,11 @@ echo 'KERNEL=="ttyACM*", MODE="0777"' | sudo tee /etc/udev/rules.d/99-serial-acm
 sudo udevadm control --reload-rules && sudo udevadm trigger
 
 ############################################
-# ANYDESK (CORREÇÃO PARA NÃO QUEDAR CONEXÃO)
+# ANYDESK (MANTÉM CONEXÃO ATIVA)
 ############################################
 echo -e "\n${AMARELO}>>> Verificando AnyDesk...${NC}"
-# Apenas instala/atualiza se não estiver presente. Não remove para não derrubar o suporte.
 sudo apt install anydesk -y 
 sudo systemctl enable anydesk
-# Não reiniciamos o serviço via systemctl se ele já estiver rodando para não cair a conexão
 if ! systemctl is-active --quiet anydesk; then
     sudo systemctl start anydesk
 fi
@@ -121,11 +119,20 @@ case "$DESKTOP_ENV" in
         sudo -u $USER_NAME DISPLAY=:0 DBUS_SESSION_BUS_ADDRESS="unix:path=/run/user/$USER_ID/bus" \
         gsettings set org.cinnamon.desktop.background picture-uri "file://$CAPA_PATH"
         
-        MENU_JSON="/home/$USER_NAME/.config/cinnamon/spices/menu@cinnamon.org/0.json"
-        if [ -f "$MENU_JSON" ]; then
-            sed -i 's|"value": ".*symbolic"|"value": "'$LOGO_PATH'"|' "$MENU_JSON"
-            sed -i 's|"value": "linuxmint-logo-ring"|"value": "'$LOGO_PATH'"|' "$MENU_JSON"
-            chown $USER_NAME:$USER_NAME "$MENU_JSON"
+        # Localiza o JSON do menu (independente do ID 0, 1, 2...)
+        MENU_DIR="/home/$USER_NAME/.config/cinnamon/spices/menu@cinnamon.org"
+        MENU_CONF=$(ls $MENU_DIR/*.json 2>/dev/null | head -n 1)
+
+        if [ -f "$MENU_CONF" ]; then
+            # Ativa ícone personalizado e define o caminho da logo.png
+            sed -i 's|"use-custom-label": { "type": "checkbox", "value": false }|"use-custom-label": { "type": "checkbox", "value": true }|' "$MENU_CONF"
+            sed -i 's|"custom-icon": { "type": "icon-chooser", "value": ".*" }|"custom-icon": { "type": "icon-chooser", "value": "'$LOGO_PATH'" }|' "$MENU_CONF"
+            sed -i 's|"custom-label": { "type": "entry", "value": ".*" }|"custom-label": { "type": "entry", "value": "ILLIMITAR" }|' "$MENU_CONF"
+            chown $USER_NAME:$USER_NAME "$MENU_CONF"
+            
+            # Força o Cinnamon a recarregar as configurações do Applet de Menu sem reiniciar a sessão
+            sudo -u $USER_NAME DISPLAY=:0 DBUS_SESSION_BUS_ADDRESS="unix:path=/run/user/$USER_ID/bus" \
+            busctl --user call org.Cinnamon org.Cinnamon /org/Cinnamon org.Cinnamon Eval s 'Main.appletManager.getAppletsByUuid("menu@cinnamon.org").forEach(i => i.on_settings_changed())' 2>/dev/null
         fi
         ;;
     *"mate"*)
