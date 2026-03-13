@@ -12,9 +12,9 @@
 # Variáveis de Ambiente
 USER_NAME="user"
 USER_ID=$(id -u $USER_NAME)
-CAPA_PATH="/home/$USER_NAME/imagens_sistema/capa.png"
-LOGO_PATH="/home/$USER_NAME/imagens_sistema/logo.png"
 REPO_PATH="/home/$USER_NAME/.PDVilliConfig"
+CAPA_PATH="$REPO_PATH/capa.png"
+LOGO_PATH="$REPO_PATH/logo.png"
 
 # Cores para feedback
 VERDE='\033[0;32m'
@@ -106,31 +106,28 @@ sudo apt install net-tools ssh jq -y
 # IDENTIDADE VISUAL ILLIMITAR (CORRIGIDO)
 ############################################
 echo -e "\n${AMARELO}>>> Aplicando identidade visual ILLIMITAR...${NC}"
-mkdir -p /home/$USER_NAME/imagens_sistema
-chown $USER_NAME:$USER_NAME /home/$USER_NAME/imagens_sistema
 
-cp $REPO_PATH/capa.png $CAPA_PATH 2>/dev/null
-cp $REPO_PATH/logo.png $LOGO_PATH 2>/dev/null
-chown -R $USER_NAME:$USER_NAME /home/$USER_NAME/imagens_sistema
-chmod 644 $CAPA_PATH $LOGO_PATH
+# Garante que a pasta do repositório seja legível pelo sistema de janelas
+chown -R $USER_NAME:$USER_NAME $REPO_PATH
+chmod -R 755 $REPO_PATH
 
 case "$DESKTOP_ENV" in
     *"cinnamon"*)
+        # Aplicação de Wallpaper (Caminho direto do REPO)
         sudo -u $USER_NAME DISPLAY=:0 DBUS_SESSION_BUS_ADDRESS="unix:path=/run/user/$USER_ID/bus" \
         gsettings set org.cinnamon.desktop.background picture-uri "file://$CAPA_PATH"
         
-        # Localiza o JSON do menu (independente do ID 0, 1, 2...)
+        # Localiza o JSON do menu
         MENU_DIR="/home/$USER_NAME/.config/cinnamon/spices/menu@cinnamon.org"
         MENU_CONF=$(ls $MENU_DIR/*.json 2>/dev/null | head -n 1)
 
         if [ -f "$MENU_CONF" ]; then
-            # Ativa ícone personalizado e define o caminho da logo.png
             sed -i 's|"use-custom-label": { "type": "checkbox", "value": false }|"use-custom-label": { "type": "checkbox", "value": true }|' "$MENU_CONF"
             sed -i 's|"custom-icon": { "type": "icon-chooser", "value": ".*" }|"custom-icon": { "type": "icon-chooser", "value": "'$LOGO_PATH'" }|' "$MENU_CONF"
             sed -i 's|"custom-label": { "type": "entry", "value": ".*" }|"custom-label": { "type": "entry", "value": "ILLIMITAR" }|' "$MENU_CONF"
             chown $USER_NAME:$USER_NAME "$MENU_CONF"
             
-            # Força o Cinnamon a recarregar as configurações do Applet de Menu sem reiniciar a sessão
+            # Força o Cinnamon a recarregar o applet para "desbugar" o ícone na hora
             sudo -u $USER_NAME DISPLAY=:0 DBUS_SESSION_BUS_ADDRESS="unix:path=/run/user/$USER_ID/bus" \
             busctl --user call org.Cinnamon org.Cinnamon /org/Cinnamon org.Cinnamon Eval s 'Main.appletManager.getAppletsByUuid("menu@cinnamon.org").forEach(i => i.on_settings_changed())' 2>/dev/null
         fi
@@ -141,11 +138,7 @@ case "$DESKTOP_ENV" in
         ;;
     *"xfce"*)
         sudo -u $USER_NAME DISPLAY=:0 DBUS_SESSION_BUS_ADDRESS="unix:path=/run/user/$USER_ID/bus" \
-        bash -c '
-            for prop in $(xfconf-query -c xfce4-desktop -p /backdrop -l | grep last-image); do
-                xfconf-query -c xfce4-desktop -p "$prop" -s "'$CAPA_PATH'"
-            done
-        '
+        bash -c 'for prop in $(xfconf-query -c xfce4-desktop -p /backdrop -l | grep last-image); do xfconf-query -c xfce4-desktop -p "$prop" -s "'$CAPA_PATH'"; done'
         ;;
 esac
 
