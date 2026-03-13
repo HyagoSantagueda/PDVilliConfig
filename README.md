@@ -1,4 +1,4 @@
-# PDVilliConfig 🚀
+# Configuração Inicial Automatica do Navegador PDV no LinuxMint 🚀
 
 ### **ILLIMITAR - Soluções Integradas**
 Sistema automatizado de configuração inicial, manutenção e gestão de versões para terminais PDV em Linux Mint.
