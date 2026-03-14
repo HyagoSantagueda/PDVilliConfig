@@ -4,15 +4,19 @@
 #        ILLIMITAR - SOLUÇÕES INTEGRADAS                   #
 # -------------------------------------------------------- #
 #  SISTEMA DE GESTÃO E ATUALIZAÇÃO PDV                     #
-#                                                          #
-#  Desenvolvido por: Hyago Santagueda & João Victor Moraes #
 ############################################################
 
-# Configurações do Novo Repositório
+# Configurações do Repositório
 REPO="HyagoSantagueda/PDVilliConfig"
 PACOTE="pdv"
+
+# Caminhos Originais
 CAMINHO_INI="/opt/pdv/pdv.ini"
+CAMINHO_TLS="/usr/lib/CONFITLS.INI"
+
+# Caminhos de Backup
 BACKUP_INI="$HOME/pdv.ini"
+BACKUP_TLS="$HOME/CONFITLS.INI"
 
 # Cores ILLIMITAR
 VERDE='\033[0;32m'
@@ -23,7 +27,7 @@ NC='\033[0m'
 # Função para configuração do TEF
 configurar_tef() {
     echo -e "\n${AMARELO}==========================================${NC}"
-    echo -e "${AMARELO}       CONFIGURAÇÃO ADICIONAL TEF         ${NC}"
+    echo -e "${AMARELO}        CONFIGURAÇÃO ADICIONAL TEF         ${NC}"
     echo -e "${AMARELO}==========================================${NC}"
     read -p "Possui TEF? (s/N): " POSSUI_TEF
     
@@ -49,15 +53,15 @@ configurar_tef() {
 instalar_pacote() {
     local url=$1
     local versao=$2
+    local tipo=$3
     
     if [ -z "$url" ] || [ "$url" == "null" ]; then
-        echo -e "${VERMELHO}ERRO: Link de download não encontrado.${NC}"
+        echo -e "${VERMELHO}ERRO: Link da versão $tipo não encontrado.${NC}"
         sleep 3
         return
     fi
 
-    echo -e "${AMARELO}Baixando versão: $versao...${NC}"
-    rm -f pdv.deb
+    echo -e "${AMARELO}Baixando versão $tipo: $versao...${NC}"
     wget -q --show-progress --no-cache -O pdv.deb "$url"
     
     if [ ! -s pdv.deb ]; then
@@ -66,58 +70,74 @@ instalar_pacote() {
         return
     fi
 
-    # PKILL SELETIVO: Mata o binário sem derrubar este script
-    echo "Encerrando processos do executável PDV..."
-    sudo ps aux | grep "/opt/pdv/pdv" | grep -v grep | awk '{print $2}' | xargs -r sudo kill -9 2>/dev/null
-    sleep 1
+    echo -e "\n${VERDE}Versão $tipo ($versao) baixada com sucesso!${NC}"
 
-    echo "------------------------------------------"
-    if [ -f "$CAMINHO_INI" ]; then
-        echo "Fazendo backup do pdv.ini em $BACKUP_INI..."
-        cp "$CAMINHO_INI" "$BACKUP_INI"
-    fi
+    local tentativas=0
+    while [ $tentativas -lt 2 ]; do
+        read -p "Deseja instalar a versão $tipo agora? (s/N): " INSTALAR_AGORA
+        
+        if [[ "$INSTALAR_AGORA" =~ ^([sS])$ ]]; then
+            echo -e "${AMARELO}Iniciando instalação da versão $tipo...${NC}"
+            sudo ps aux | grep "/opt/pdv/pdv" | grep -v grep | awk '{print $2}' | xargs -r sudo kill -9 2>/dev/null
+            sleep 1
 
-    chmod 644 pdv.deb
-    echo "Instalando..."
-    sudo dpkg -i ./pdv.deb
-    sudo apt-get install -f -y
-    
-    if [ -f "$BACKUP_INI" ]; then
-        echo "Restaurando pdv.ini..."
-        sudo mkdir -p /opt/pdv
-        sudo cp "$BACKUP_INI" "$CAMINHO_INI"
-        sudo chmod 666 "$CAMINHO_INI"
-    fi
+            [ -f "$CAMINHO_INI" ] && cp "$CAMINHO_INI" "$BACKUP_INI"
+            [ -f "$CAMINHO_TLS" ] && cp "$CAMINHO_TLS" "$BACKUP_TLS"
 
-    configurar_tef
+            sudo dpkg -i ./pdv.deb
+            sudo apt-get install -f -y
+            
+            if [ -f "$BACKUP_INI" ]; then
+                sudo mkdir -p /opt/pdv
+                sudo cp "$BACKUP_INI" "$CAMINHO_INI"
+                sudo chmod 666 "$CAMINHO_INI"
+            fi
+
+            if [ -f "$BACKUP_TLS" ]; then
+                sudo cp "$BACKUP_TLS" "$CAMINHO_TLS"
+                sudo chmod 666 "$CAMINHO_TLS"
+            fi
+
+            configurar_tef
+            return
+        else
+            tentativas=$((tentativas + 1))
+            if [ $tentativas -eq 1 ]; then
+                echo -e "${AMARELO}Ok, aguardando 10 segundos...${NC}"
+                sleep 10
+            else
+                echo -e "${VERMELHO}Instalação cancelada.${NC}"
+                exit 0
+            fi
+        fi
+    done
 }
 
-# Loop Principal do Menu
+# Loop Principal
 while true; do
     clear
     echo -e "${AMARELO}############################################################${NC}"
     echo -e "${AMARELO}#        ILLIMITAR - SOLUÇÕES INTEGRADAS                   #${NC}"
     echo -e "${AMARELO}############################################################${NC}"
-    echo "Buscando informações na maquina e no GitHub..."
+    echo "Buscando informações no GitHub..."
 
-    # Captura das versões no novo repositório
-    JSON_LATEST=$(curl -sL "https://api.github.com/repos/$REPO/releases/latest")
-    VER_LATEST=$(echo "$JSON_LATEST" | grep -m 1 '"tag_name":' | cut -d'"' -f4 | tr -d 'v')
-    URL_LATEST=$(echo "$JSON_LATEST" | grep "browser_download_url" | grep ".deb" | head -n 1 | cut -d'"' -f4)
+    # Captura Estável
+    JSON_ESTAVEL=$(curl -sL "https://api.github.com/repos/$REPO/releases/tags/Estavel")
+    VER_LATEST=$(echo "$JSON_ESTAVEL" | jq -r 'if .name == null or .name == "" then .tag_name else .name end' | tr -d 'v')
+    URL_LATEST=$(echo "$JSON_ESTAVEL" | jq -r '.assets[] | select(.name | endswith(".deb")) | .browser_download_url' | head -n 1)
 
-    JSON_BETA=$(curl -sL "https://api.github.com/repos/$REPO/releases")
-    VER_BETA=$(echo "$JSON_BETA" | grep -m 1 '"tag_name":' | cut -d'"' -f4 | tr -d 'v')
-    URL_BETA=$(echo "$JSON_BETA" | grep "browser_download_url" | grep ".deb" | head -n 1 | cut -d'"' -f4)
-
+    # Captura Local
     VER_LOCAL=$(dpkg-query -W -f='${Version}' "$PACOTE" 2>/dev/null | xargs)
+    [ "$VER_LATEST" == "null" ] && VER_LATEST="Não encontrada"
 
     clear
     echo -e "${AMARELO}############################################################${NC}"
     echo -e "${AMARELO}#        ILLIMITAR - SOLUÇÕES INTEGRADAS                   #${NC}"
     echo -e "${AMARELO}############################################################${NC}"
     echo -e "Versão Instalada:  [${VER_LOCAL:-${VERMELHO}Não encontrada${NC}}]"
+    echo -e "Versão Estável:    [${VERDE}${VER_LATEST}${NC}]"
     echo ""
-    echo -e "${VERDE}1) Instalar Versão Estável (${VER_LATEST:-...})${NC}"
+    echo -e "${VERDE}1) Validar/Instalar Versão Estável${NC}"
     echo -e "2) Sair"
     echo "==========================================="
     
@@ -125,42 +145,48 @@ while true; do
 
     case $OPCAO in
         1)
-            [ "$VER_LATEST" == "$VER_LOCAL" ] && read -p "Reinstalar mesma versão? (s/N): " RESP && [[ ! "$RESP" =~ ^([sS])$ ]] && continue
-            instalar_pacote "$URL_LATEST" "$VER_LATEST"
-            ;;
-        170) # GATILHO OCULTO BETA
-            echo -e "${AMARELO}Acessando instalação Beta...${NC}"
-            instalar_pacote "$URL_BETA" "$VER_BETA"
-            ;;
-        171) # GATILHO OCULTO DOWNGRADE
-            echo -e "${VERMELHO}>>> MODO DOWNGRADE / LIMPEZA TOTAL (ILLIMITAR) <<<${NC}"
-            
-            echo "Baixando versão estável para restauração..."
-            rm -f pdv.deb
-            wget -q --show-progress --no-cache -O pdv.deb "$URL_LATEST"
-            
-            if [ ! -s pdv.deb ]; then
-                echo -e "${VERMELHO}ERRO no download. Operação abortada.${NC}"
-                sleep 2
-                continue
+            if [ -z "$VER_LOCAL" ]; then
+                instalar_pacote "$URL_LATEST" "$VER_LATEST" "ESTÁVEL"
+            elif dpkg --compare-versions "$VER_LOCAL" "eq" "$VER_LATEST"; then
+                echo -e "\n${AMARELO}AVISO: A versão estável ($VER_LATEST) já está instalada.${NC}"
+                sleep 1
+                configurar_tef
+            elif dpkg --compare-versions "$VER_LOCAL" "gt" "$VER_LATEST"; then
+                echo -e "${VERMELHO}\nSua versão atual ($VER_LOCAL) é superior à estável ($VER_LATEST).${NC}"
+                echo -e "Entre em contato com o Suporte via Chat: ${VERDE}chat.pdv.moda${NC}"
+                echo -e "Ou via Whatsapp: ${VERDE}(21) 99464-1819${NC}"
+                echo -e "\n${AMARELO}Pressione qualquer tecla para sair...${NC}"
+                read -n 1 -s
+                exit 0
+            else
+                instalar_pacote "$URL_LATEST" "$VER_LATEST" "ESTÁVEL"
             fi
-
-            read -p "Confirmar limpeza total e downgrade para $VER_LATEST? (s/N): " CONFIRM
-            [[ ! "$CONFIRM" =~ ^([sS])$ ]] && continue
-
-            # Executa a limpeza apenas após a confirmação
-            sudo ps aux | grep "/opt/pdv/pdv" | grep -v grep | awk '{print $2}' | xargs -r sudo kill -9 2>/dev/null
-            sleep 1
-
-            [ -f "$CAMINHO_INI" ] && cp "$CAMINHO_INI" "$BACKUP_INI"
-            sudo apt remove "$PACOTE" -y
-            sudo rm -rf /opt/pdv
+            ;;
+        170) # BETA (OCULTO)
+            echo -e "${AMARELO}Acessando canal BETA (Interno)...${NC}"
+            JSON_BETA_REL=$(curl -sL "https://api.github.com/repos/$REPO/releases/tags/Beta")
+            VER_BETA=$(echo "$JSON_BETA_REL" | jq -r 'if .name == null or .name == "" then .tag_name else .name end' | tr -d 'v')
+            URL_BETA=$(echo "$JSON_BETA_REL" | jq -r '.assets[] | select(.name | endswith(".deb")) | .browser_download_url' | head -n 1)
             
-            chmod 644 pdv.deb
-            sudo dpkg -i ./pdv.deb
-            sudo apt-get install -f -y
-            [ -f "$BACKUP_INI" ] && { sudo mkdir -p /opt/pdv; sudo cp "$BACKUP_INI" "$CAMINHO_INI"; sudo chmod 666 "$CAMINHO_INI"; }
-            configurar_tef
+            if [ "$VER_BETA" == "null" ]; then
+                echo -e "${VERMELHO}Erro: Tag Beta não encontrada.${NC}"
+                sleep 2
+            else
+                instalar_pacote "$URL_BETA" "$VER_BETA" "BETA"
+            fi
+            ;;
+        171) # DOWNGRADE (OCULTO)
+            echo -e "${VERMELHO}>>> MODO DOWNGRADE MANUAL <<<${NC}"
+            read -p "Confirmar limpeza e downgrade para Estável $VER_LATEST? (s/N): " CONFIRM
+            [[ ! "$CONFIRM" =~ ^([sS])$ ]] && continue
+            
+            [ -f "$CAMINHO_INI" ] && cp "$CAMINHO_INI" "$BACKUP_INI"
+            [ -f "$CAMINHO_TLS" ] && cp "$CAMINHO_TLS" "$BACKUP_TLS"
+            
+            sudo ps aux | grep "/opt/pdv/pdv" | grep -v grep | awk '{print $2}' | xargs -r sudo kill -9 2>/dev/null
+            sudo apt remove "$PACOTE" -y && sudo rm -rf /opt/pdv
+            
+            instalar_pacote "$URL_LATEST" "$VER_LATEST" "ESTÁVEL (Downgrade)"
             ;;
         2) exit 0 ;;
         *) sleep 1 ;;
