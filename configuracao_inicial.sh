@@ -103,7 +103,7 @@ echo -e "\n${AMARELO}>>> Instalando ferramentas de suporte...${NC}"
 sudo apt install net-tools ssh jq -y
 
 ############################################
-# IDENTIDADE VISUAL ILLIMITAR (REVISADO)
+# IDENTIDADE VISUAL ILLIMITAR
 ############################################
 echo -e "\n${AMARELO}>>> Aplicando identidade visual ILLIMITAR...${NC}"
 
@@ -118,18 +118,14 @@ case "$DESKTOP_ENV" in
         
         MENU_JSON="/home/$USER_NAME/.config/cinnamon/spices/menu@cinnamon.org/0.json"
         if [ -f "$MENU_JSON" ]; then
-            echo "Ajustando Menu Cinnamon..."
-            # 1. Primeiro Desabilita a customização (Reset)
+            # Aplica a LOGO (Lógica Original)
+            sudo -u $USER_NAME sed -i 's|"value": "linuxmint-logo-ring-symbolic"|"value": "'$LOGO_PATH'"|' "$MENU_JSON"
+            
+            # Reset de Interface: Desativa e Ativa para forçar atualização
             sudo -u $USER_NAME sed -i 's|"use-custom-label": { "type": "checkbox", "value": true }|"use-custom-label": { "type": "checkbox", "value": false }|' "$MENU_JSON"
-            
-            # 2. Injeta os novos valores (Logo e Texto)
-            sudo -u $USER_NAME sed -i 's|"custom-icon": { "type": "icon-chooser", "value": ".*" }|"custom-icon": { "type": "icon-chooser", "value": "'$LOGO_PATH'" }|' "$MENU_JSON"
-            sudo -u $USER_NAME sed -i 's|"custom-label": { "type": "entry", "value": ".*" }|"custom-label": { "type": "entry", "value": "ILLIMITAR" }|' "$MENU_JSON"
-            
-            # 3. Habilita novamente para forçar o sistema a ler o novo ícone
             sudo -u $USER_NAME sed -i 's|"use-custom-label": { "type": "checkbox", "value": false }|"use-custom-label": { "type": "checkbox", "value": true }|' "$MENU_JSON"
             
-            # 4. Reinicia o Cinnamon em background para aplicar visualmente
+            # Reinicia o Cinnamon para aplicar visualmente
             sudo -u $USER_NAME DISPLAY=:0 DBUS_SESSION_BUS_ADDRESS="unix:path=/run/user/$USER_ID/bus" \
             cinnamon --replace > /dev/null 2>&1 &
             sleep 2
@@ -146,14 +142,13 @@ case "$DESKTOP_ENV" in
 esac
 
 ############################################
-# INSTALAÇÃO PDV (CAMINHO REVISADO)
+# INSTALAÇÃO PDV (CORREÇÃO DE CHAMADA)
 ############################################
 echo -e "\n${AMARELO}==========================================${NC}"
 read -p "Deseja iniciar a instalação do Navegador PDV agora? (s/N): " INSTALL_NAV
 
 if [[ "$INSTALL_NAV" =~ ^([sS])$ ]]; then
     echo -e "\n${VERDE}>>> Iniciando Instalador PDV ILLIMITAR...${NC}"
-    # Verificamos no diretório atual (.) e também no REPO_PATH por segurança
     if [ -f "./attPDV.sh" ]; then
         chmod +x ./attPDV.sh
         sudo ./attPDV.sh
@@ -161,7 +156,7 @@ if [[ "$INSTALL_NAV" =~ ^([sS])$ ]]; then
         chmod +x "$REPO_PATH/attPDV.sh"
         sudo "$REPO_PATH/attPDV.sh"
     else
-        echo -e "${VERMELHO}Erro: attPDV.sh não encontrado no diretório atual nem em $REPO_PATH!${NC}"
+        echo -e "${VERMELHO}Erro: attPDV.sh não encontrado!${NC}"
     fi
 else
     echo -e "${AMARELO}>>> Instalação do Navegador PDV pulada.${NC}"
@@ -185,9 +180,16 @@ fi
 ############################################
 # CRIAR ATALHOS NA ÁREA DE TRABALHO
 ############################################
-echo -e "\n${AMARELO}>>> Criando atalhos na Área de Trabalho...${NC}"
+echo -e "\n${AMARELO}>>> Organizando atalhos na Área de Trabalho...${NC}"
 DT_PATH=$(sudo -u $USER_NAME xdg-user-dir DESKTOP)
 
+# 1. REMOVE o atalho de configuração (LeinadOS padrão)
+if [ -f "$DT_PATH/Configurar_PDV.desktop" ]; then
+    rm -f "$DT_PATH/Configurar_PDV.desktop"
+    echo "Atalho antigo Configurar_PDV removido."
+fi
+
+# 2. Atalho PDV
 cat <<EOF > "$DT_PATH/pdv.desktop"
 [Desktop Entry]
 Version=1.0
@@ -200,6 +202,7 @@ Terminal=false
 Categories=Office;
 EOF
 
+# 3. Atalho AnyDesk
 cat <<EOF > "$DT_PATH/anydesk.desktop"
 [Desktop Entry]
 Version=1.0
@@ -212,6 +215,7 @@ Terminal=false
 Categories=Network;RemoteAccess;
 EOF
 
+# 4. Atalho Calculadora
 cat <<EOF > "$DT_PATH/calculadora.desktop"
 [Desktop Entry]
 Version=1.0
@@ -220,6 +224,18 @@ Name=Calculadora
 Exec=gnome-calculator
 Icon=accessories-calculator
 Terminal=false
+EOF
+
+# 5. Atalho Google Chrome
+cat <<EOF > "$DT_PATH/google-chrome.desktop"
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Google Chrome
+Exec=/usr/bin/google-chrome-stable %U
+Icon=google-chrome
+Terminal=false
+Categories=Network;WebBrowser;
 EOF
 
 chown $USER_NAME:$USER_NAME "$DT_PATH"/*.desktop
