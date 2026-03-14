@@ -54,7 +54,7 @@ AUTORIA E DESENVOLVIMENTO:
 ------------------------------------------------------------
 
 * Desenvolvedores: Hyago Santagueda & João Victor Moraes
-* Co-Desenvolvedor: Vitor Hugo Paraguasu
+* Co-Desenvolvedor: Vitor Hugo Paraguassu
 
 ILLIMITAR - Soluções Integradas © 2026 
 
