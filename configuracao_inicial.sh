@@ -103,7 +103,7 @@ echo -e "\n${AMARELO}>>> Instalando ferramentas de suporte...${NC}"
 sudo apt install net-tools ssh jq -y
 
 ############################################
-# IDENTIDADE VISUAL ILLIMITAR (CORRIGIDO)
+# IDENTIDADE VISUAL ILLIMITAR (REVISADO)
 ############################################
 echo -e "\n${AMARELO}>>> Aplicando identidade visual ILLIMITAR...${NC}"
 
@@ -112,12 +112,27 @@ chmod -R 755 $REPO_PATH
 
 case "$DESKTOP_ENV" in
     *"cinnamon"*)
+        # Aplica Wallpaper
         sudo -u $USER_NAME DISPLAY=:0 DBUS_SESSION_BUS_ADDRESS="unix:path=/run/user/$USER_ID/bus" \
         gsettings set org.cinnamon.desktop.background picture-uri "file://$CAPA_PATH"
         
         MENU_JSON="/home/$USER_NAME/.config/cinnamon/spices/menu@cinnamon.org/0.json"
         if [ -f "$MENU_JSON" ]; then
-            sudo -u $USER_NAME sed -i 's|"value": "linuxmint-logo-ring-symbolic"|"value": "'$LOGO_PATH'"|' "$MENU_JSON"
+            echo "Ajustando Menu Cinnamon..."
+            # 1. Primeiro Desabilita a customização (Reset)
+            sudo -u $USER_NAME sed -i 's|"use-custom-label": { "type": "checkbox", "value": true }|"use-custom-label": { "type": "checkbox", "value": false }|' "$MENU_JSON"
+            
+            # 2. Injeta os novos valores (Logo e Texto)
+            sudo -u $USER_NAME sed -i 's|"custom-icon": { "type": "icon-chooser", "value": ".*" }|"custom-icon": { "type": "icon-chooser", "value": "'$LOGO_PATH'" }|' "$MENU_JSON"
+            sudo -u $USER_NAME sed -i 's|"custom-label": { "type": "entry", "value": ".*" }|"custom-label": { "type": "entry", "value": "ILLIMITAR" }|' "$MENU_JSON"
+            
+            # 3. Habilita novamente para forçar o sistema a ler o novo ícone
+            sudo -u $USER_NAME sed -i 's|"use-custom-label": { "type": "checkbox", "value": false }|"use-custom-label": { "type": "checkbox", "value": true }|' "$MENU_JSON"
+            
+            # 4. Reinicia o Cinnamon em background para aplicar visualmente
+            sudo -u $USER_NAME DISPLAY=:0 DBUS_SESSION_BUS_ADDRESS="unix:path=/run/user/$USER_ID/bus" \
+            cinnamon --replace > /dev/null 2>&1 &
+            sleep 2
         fi
         ;;
     *"mate"*)
@@ -131,18 +146,22 @@ case "$DESKTOP_ENV" in
 esac
 
 ############################################
-# INSTALAÇÃO PDV (COM PERGUNTA)
+# INSTALAÇÃO PDV (CAMINHO REVISADO)
 ############################################
 echo -e "\n${AMARELO}==========================================${NC}"
 read -p "Deseja iniciar a instalação do Navegador PDV agora? (s/N): " INSTALL_NAV
 
 if [[ "$INSTALL_NAV" =~ ^([sS])$ ]]; then
     echo -e "\n${VERDE}>>> Iniciando Instalador PDV ILLIMITAR...${NC}"
+    # Verificamos no diretório atual (.) e também no REPO_PATH por segurança
     if [ -f "./attPDV.sh" ]; then
         chmod +x ./attPDV.sh
         sudo ./attPDV.sh
+    elif [ -f "$REPO_PATH/attPDV.sh" ]; then
+        chmod +x "$REPO_PATH/attPDV.sh"
+        sudo "$REPO_PATH/attPDV.sh"
     else
-        echo -e "${VERMELHO}Erro: attPDV.sh não encontrado!${NC}"
+        echo -e "${VERMELHO}Erro: attPDV.sh não encontrado no diretório atual nem em $REPO_PATH!${NC}"
     fi
 else
     echo -e "${AMARELO}>>> Instalação do Navegador PDV pulada.${NC}"
