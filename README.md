@@ -47,6 +47,7 @@ REQUISITOS E COMPATIBILIDADE:
 * Sistema Operacional: Linux Mint. No momento, compatível apenas com o Linux Mint "LeinadOS", que é a ISO personalizada pela ILLIMITAR.
 * Ambientes: Cinnamon.
 * Usuário Requerido: user.
+* Link da ISO: https://drive.google.com/file/d/1yUDgoG3LyQph34n4CCc1m9Gr1fQ0Udie/view?usp=sharing
 
 ------------------------------------------------------------
 AUTORIA E DESENVOLVIMENTO:
